@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 import sys, subprocess, re
-#global variable
-ipPattern = re.compile(r'(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3})')
 
 def whoisCMD(ipAdr): #run whois
 	myCmd = ["whois", ipAdr]
@@ -94,9 +92,21 @@ def digCMD(webAdr):
 	output=subprocess.run(myCmd, capture_output=True, text=True)
 	digIP = str(output.stdout)
 	return digIP.strip()
-
+def theHarvester(domainName):
+	my_cmd=["theHarvester","-d",domainName,"-l","500","-b","bing"]
+	output=subprocess.run(my_cmd,capture_output=True, text=True )
+	result=output.stdout.split('\n')
+	print("\n------------------------------\nresult from theHarvester using 'Bing' as the search Engine ")
+	result=result[15:]
+	results=""
+	for i in range(len(result)):
+		results+=result[i]
+		results+='\n'
+	print(results)
+	return
 
 webName = sys.argv[1]
+ipPattern = re.compile(r'(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3})')
 hostReturn = hostCMD(webName)
 digReturn = digCMD(webName)
 nsResult = nslookCMD(webName)
@@ -121,3 +131,4 @@ for i in range(len(nsResult)):
 		print('\t'+nsResult[i])
 	else:
 		print('\t\t'+nsResult[i])
+theHarvester(webName)
