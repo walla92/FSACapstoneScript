@@ -1,7 +1,14 @@
 #!/usr/bin/env python
+'''
+Run the script with the website you want to scan as an additional argument
+additional argument "a", "all", or "more" (not case senestive) if you want 
+to run a louder scan using nmap and theharvester aswell
+'''
 import sys, subprocess, re
 
-def whoisCMD(ipAdr): #run whois
+moreResults = False
+
+def whoisCMD(ipAdr): #run whois command
 	myCmd = ["whois", ipAdr]
 	whoisData=[]
 	ouput= subprocess.run(myCmd, capture_output=True, text=True)
@@ -13,7 +20,7 @@ def whoisCMD(ipAdr): #run whois
 				addline = " ".join(line.split())
 				whoisData.append(addline)
 	return whoisData
-def hostCMD(webAdr):
+def hostCMD(webAdr): #run host command
 	hostInfo = []
 	myCmd = ["host", webAdr]
 	output=subprocess.run(myCmd, capture_output=True, text=True)
@@ -22,7 +29,7 @@ def hostCMD(webAdr):
 		if(line.strip() != ''):
 			hostInfo.append(line.strip())
 	return hostInfo
-def nslookCMD(webAdr):
+def nslookCMD(webAdr): #run nslookup command
 	nslookInfo = []
 	aInfo = []
 	mxInfo = []
@@ -87,12 +94,27 @@ def nslookCMD(webAdr):
 	for i in range(len(ptrInfo)):
 		nslookInfo.append(ptrInfo[i])	
 	return nslookInfo
-def digCMD(webAdr):
+def digCMD(webAdr): #run dig +short command
 	myCmd = ["dig", "+short", webAdr]
 	output=subprocess.run(myCmd, capture_output=True, text=True)
 	digIP = str(output.stdout)
 	return digIP.strip()
-def theHarvester(domainName):
+def nmapScan(ipAdr): #nmap scan with the ip address
+	boolCapture = False
+	capture = []
+	myCmd = ["nmap", ipAdr]
+	ouput= subprocess.run(myCmd, capture_output=True, text=True)
+	results=ouput.stdout.split("\n")
+	for line in results:
+		if( boolCapture == True and line != "" ):
+			capture.append(line.strip())
+		if("PORT" in line):
+			boolCapture = True
+	if capture:
+		capture.pop(-1)
+	print(capture)
+	return capture
+def theHarvester(domainName): #run theHarvester
 	my_cmd=["theHarvester","-d",domainName,"-l","500","-b","bing"]
 	output=subprocess.run(my_cmd,capture_output=True, text=True )
 	result=output.stdout.split('\n')
@@ -106,6 +128,10 @@ def theHarvester(domainName):
 	return
 
 webName = sys.argv[1]
+if( len(sys.argv) >= 3 ):
+	scanOpt = sys.argv[2]
+	if(scanOpt.casefold() =="a".casefold() or scanOpt.casefold() =="all".casefold() or scanOpt.casefold() =="more".casefold()):
+		moreResults = True
 ipPattern = re.compile(r'(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3})')
 hostReturn = hostCMD(webName)
 digReturn = digCMD(webName)
@@ -113,7 +139,10 @@ nsResult = nslookCMD(webName)
 hostIP = ipPattern.search(hostReturn[0])[0]
 whoisHost = whoisCMD(hostIP)
 whoisDig = whoisCMD(digReturn)
-
+if(moreResults == True):
+	nmapReturn1 = nmapScan(digReturn)
+	if(digReturn != hostIP):
+		nmapReturn2 = nmapScan(hostIP)
 print("DIG cmd result\n" + '\t'+digReturn)
 print("HOST cmd result")
 for i in range(len(hostReturn)):
@@ -131,4 +160,13 @@ for i in range(len(nsResult)):
 		print('\t'+nsResult[i])
 	else:
 		print('\t\t'+nsResult[i])
-theHarvester(webName)
+if(moreResults == True):
+	print("\n--------------------More scan results--------------------\n")
+	print("NAMP scan (" + digReturn + ")")
+	for i in range(len(nmapReturn1)):
+		print("\t"+nmapReturn1[i])
+	if(digReturn != hostIP):
+		print("NAMP scan (" + hostIP + ")")
+		for i in range(len(nmapReturn2)):
+			print('\t'+nmapReturn2[i])
+	theHarvester(webName)
