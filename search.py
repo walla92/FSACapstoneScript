@@ -112,7 +112,6 @@ def nmapScan(ipAdr): #nmap scan with the ip address
 			boolCapture = True
 	if capture:
 		capture.pop(-1)
-	print(capture)
 	return capture
 def theHarvester(domainName): #run theHarvester
 	my_cmd=["theHarvester","-d",domainName,"-l","500","-b","bing"]
@@ -132,28 +131,57 @@ if( len(sys.argv) >= 3 ):
 	scanOpt = sys.argv[2]
 	if(scanOpt.casefold() =="a".casefold() or scanOpt.casefold() =="all".casefold() or scanOpt.casefold() =="more".casefold()):
 		moreResults = True
+#used to compare the IPs from different commands
+#uses the IP from dig as a baseline.
+allSameIP = True
+hostDigIP = True
+hostNsIP = True
+DigNsIP = True
 ipPattern = re.compile(r'(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3})')
+#run the host, dig, nslookup commands
 hostReturn = hostCMD(webName)
 digReturn = digCMD(webName)
 nsResult = nslookCMD(webName)
 hostIP = ipPattern.search(hostReturn[0])[0]
-whoisHost = whoisCMD(hostIP)
+nsIP = ipPattern.search(nsResult[1])[0]
+#run the whois command/commands
 whoisDig = whoisCMD(digReturn)
+#if all IPs are the same only require 1 whois result (uses ip from dig)
+if(digReturn == hostIP and digReturn == nsIP):
+	allSameIP = True
+else:
+	#if not check to see which ones don't match (start with the ip from host)
+	if(hostIP != digReturn):
+		hostDigIP = False
+		whoisHost = whoisCMD(hostIP)
+	#check if the ip from nslookup matches the ones from both dig and host
+	if(hostIP != nsIP):
+		hostNsIP = False
+	if(digReturn != nsIP):
+		DigNsIP = False
+	if(hostNsIP == False and DigNsIP == False):
+		whoisNS = whoisCMD(nsIP)
 if(moreResults == True):
 	nmapReturn1 = nmapScan(digReturn)
 	if(digReturn != hostIP):
 		nmapReturn2 = nmapScan(hostIP)
-print("DIG cmd result\n" + '\t'+digReturn)
+print("\nDIG cmd result\n" + '\t'+digReturn)
 print("HOST cmd result")
 for i in range(len(hostReturn)):
 	print('\t'+hostReturn[i])
 print("WHOIS (" + digReturn+")")
 for i in range(len(whoisDig)):
 	print('\t'+whoisDig[i])
-if(digReturn != hostIP):
-	print("WHOIS (" + hostIP+")")
-	for i in range(len(whoisHost)):
-		print('\t'+whoisHost[i])
+#if the other IP addresses dont match the one from dig output their whois data as well
+if(allSameIP == False):
+	if(hostDigIP == False):
+		print("WHOIS (" + hostIP+")")
+		for i in range(len(whoisHost)):
+			print('\t'+whoisHost[i])
+	if(DigNsIP == False and hostNsIP == False):
+		print("WHOIS (" + hostIP+")")
+		for i in range(len(whoisNS)):
+			print('\t'+whoisNS[i])
 print("NSLOOKUP cmd result")
 for i in range(len(nsResult)):
 	if(nsResult[i] == "A results" or nsResult[i] == "MX results" or nsResult[i] == "NS results" or nsResult[i] == "PTR results"):
