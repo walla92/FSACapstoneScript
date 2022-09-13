@@ -169,6 +169,12 @@ print("\nDIG cmd result\n" + '\t'+digReturn)
 print("HOST cmd result")
 for i in range(len(hostReturn)):
 	print('\t'+hostReturn[i])
+print("NSLOOKUP cmd result")
+for i in range(len(nsResult)):
+	if(nsResult[i] == "A results" or nsResult[i] == "MX results" or nsResult[i] == "NS results" or nsResult[i] == "PTR results"):
+		print('\t'+nsResult[i])
+	else:
+		print('\t\t'+nsResult[i])
 print("WHOIS (" + digReturn+")")
 for i in range(len(whoisDig)):
 	print('\t'+whoisDig[i])
@@ -182,12 +188,6 @@ if(allSameIP == False):
 		print("WHOIS (" + hostIP+")")
 		for i in range(len(whoisNS)):
 			print('\t'+whoisNS[i])
-print("NSLOOKUP cmd result")
-for i in range(len(nsResult)):
-	if(nsResult[i] == "A results" or nsResult[i] == "MX results" or nsResult[i] == "NS results" or nsResult[i] == "PTR results"):
-		print('\t'+nsResult[i])
-	else:
-		print('\t\t'+nsResult[i])
 if(moreResults == True):
 	print("\n--------------------More scan results--------------------\n")
 	print("NAMP scan (" + digReturn + ")")
